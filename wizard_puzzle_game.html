@@ -1,0 +1,492 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Nunito:wght@400;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  #game-root {
+    font-family: 'Nunito', sans-serif;
+    min-height: 600px;
+    background: linear-gradient(160deg, #1a0e2e 0%, #2d1b4e 40%, #1e1040 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    color: #e8d5ff;
+    position: relative;
+  }
+
+  .stars {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; overflow: hidden; z-index: 0;
+  }
+  .star {
+    position: absolute; border-radius: 50%;
+    background: #fff; animation: twinkle 3s infinite alternate;
+  }
+
+  @keyframes twinkle { 0%{opacity:0.2;} 100%{opacity:0.9;} }
+  @keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,0.4);} 50%{box-shadow:0 0 0 8px rgba(167,139,250,0);} }
+  @keyframes correctPop { 0%{transform:scale(1);} 40%{transform:scale(1.05);} 100%{transform:scale(1);} }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  @keyframes spinGlow { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+
+  .content-wrap {
+    position: relative; z-index: 1;
+    padding: 24px 20px;
+    animation: fadeIn 0.5s ease;
+  }
+
+  /* Header */
+  .game-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .game-title {
+    font-family: 'Cinzel', serif;
+    font-size: 15px; font-weight: 600;
+    color: #d4b8ff;
+    letter-spacing: 1px;
+  }
+  .floor-badge {
+    background: rgba(167,139,250,0.15);
+    border: 0.5px solid rgba(167,139,250,0.4);
+    border-radius: 20px; padding: 4px 14px;
+    font-size: 13px; color: #c4a8ff;
+    font-weight: 600;
+  }
+
+  /* Progress bar */
+  .progress-wrap { margin-bottom: 20px; }
+  .progress-track {
+    height: 6px; background: rgba(255,255,255,0.08);
+    border-radius: 99px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: rgba(232,213,255,0.5);
+    margin-top: 5px;
+  }
+
+  /* Floor title */
+  .floor-title {
+    font-family: 'Cinzel', serif;
+    font-size: 17px; font-weight: 600;
+    color: #f0e6ff; margin-bottom: 6px;
+    text-align: center;
+  }
+  .floor-icon {
+    font-size: 40px; text-align: center;
+    margin-bottom: 8px;
+    animation: float 3s ease-in-out infinite;
+    display: block;
+  }
+
+  /* Scroll / story text */
+  .scroll-card {
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid rgba(167,139,250,0.25);
+    border-radius: 12px; padding: 16px 18px;
+    margin-bottom: 18px;
+    font-size: 14px; line-height: 1.7;
+    color: #d4c4f0;
+    position: relative;
+  }
+  .scroll-card::before {
+    content: '📜'; position: absolute;
+    top: -10px; left: 14px; font-size: 18px;
+  }
+
+  /* Choices */
+  .choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .choice-btn {
+    background: rgba(255,255,255,0.05);
+    border: 0.5px solid rgba(167,139,250,0.3);
+    border-radius: 10px; padding: 12px 16px;
+    color: #e8d5ff; font-family: 'Nunito', sans-serif;
+    font-size: 14px; text-align: left; cursor: pointer;
+    transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;
+  }
+  .choice-btn:hover:not(:disabled) {
+    background: rgba(167,139,250,0.15);
+    border-color: rgba(167,139,250,0.6);
+    transform: translateX(4px);
+  }
+  .choice-btn.correct {
+    background: rgba(34,197,94,0.15);
+    border-color: rgba(34,197,94,0.5);
+    color: #86efac;
+    animation: correctPop 0.4s ease;
+  }
+  .choice-btn.wrong {
+    background: rgba(239,68,68,0.12);
+    border-color: rgba(239,68,68,0.4);
+    color: #fca5a5;
+    animation: shake 0.4s ease;
+  }
+  .choice-btn:disabled { cursor: default; }
+  .choice-letter {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(167,139,250,0.2);
+    border: 0.5px solid rgba(167,139,250,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+    color: #c4a8ff;
+  }
+  .choice-btn.correct .choice-letter { background: rgba(34,197,94,0.2); border-color: #86efac; color: #86efac; }
+  .choice-btn.wrong .choice-letter { background: rgba(239,68,68,0.15); border-color: #fca5a5; color: #fca5a5; }
+
+  /* Feedback */
+  .feedback-box {
+    border-radius: 10px; padding: 12px 14px;
+    font-size: 13px; line-height: 1.6;
+    margin-bottom: 16px; display: none;
+  }
+  .feedback-box.correct-fb {
+    background: rgba(34,197,94,0.1);
+    border: 0.5px solid rgba(34,197,94,0.3);
+    color: #86efac;
+  }
+  .feedback-box.wrong-fb {
+    background: rgba(239,68,68,0.08);
+    border: 0.5px solid rgba(239,68,68,0.25);
+    color: #fca5a5;
+  }
+
+  /* Next btn */
+  .next-btn {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, #7c3aed, #9d4edd);
+    border: none; border-radius: 10px;
+    color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    display: none; transition: all 0.2s ease;
+    animation: pulse 2s infinite;
+  }
+  .next-btn:hover { opacity: 0.9; transform: scale(1.01); }
+
+  /* Cipher row */
+  .cipher-row {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    justify-content: center; margin-bottom: 20px;
+  }
+  .cipher-cell {
+    width: 30px; height: 34px;
+    background: rgba(255,255,255,0.06);
+    border: 0.5px solid rgba(167,139,250,0.2);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700;
+    font-family: 'Cinzel', serif;
+    color: transparent;
+    transition: all 0.4s ease;
+    position: relative;
+  }
+  .cipher-cell.revealed {
+    color: #f0c4ff;
+    background: rgba(167,139,250,0.15);
+    border-color: rgba(167,139,250,0.5);
+    box-shadow: 0 0 10px rgba(167,139,250,0.2);
+  }
+  .cipher-cell.glow {
+    animation: correctPop 0.5s ease;
+  }
+
+  /* Score line */
+  .score-line {
+    display: flex; gap: 16px; justify-content: center;
+    margin-bottom: 14px;
+  }
+  .score-chip {
+    background: rgba(255,255,255,0.06);
+    border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 20px; padding: 4px 14px;
+    font-size: 13px; font-weight: 600;
+  }
+  .score-chip.hearts { color: #f9a8d4; }
+  .score-chip.points { color: #fcd34d; }
+
+  /* Ending screen */
+  .ending {
+    text-align: center; padding: 20px 10px;
+    animation: fadeIn 0.6s ease;
+  }
+  .ending-icon { font-size: 70px; display: block; margin-bottom: 16px; animation: float 2s ease-in-out infinite; }
+  .ending-title {
+    font-family: 'Cinzel', serif; font-size: 22px; font-weight: 600;
+    color: #f0e6ff; margin-bottom: 10px;
+  }
+  .ending-sub { font-size: 14px; color: #c4a8ff; line-height: 1.7; margin-bottom: 20px; }
+  .magic-word {
+    font-family: 'Cinzel', serif; font-size: 26px;
+    letter-spacing: 6px; color: #f0c4ff;
+    background: rgba(167,139,250,0.12);
+    border: 0.5px solid rgba(167,139,250,0.4);
+    border-radius: 10px; padding: 14px 20px;
+    margin: 14px 0; display: inline-block;
+  }
+  .restart-btn {
+    margin-top: 16px; padding: 12px 28px;
+    background: rgba(167,139,250,0.2);
+    border: 0.5px solid rgba(167,139,250,0.5);
+    border-radius: 10px; color: #e8d5ff;
+    font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .restart-btn:hover { background: rgba(167,139,250,0.35); transform: scale(1.02); }
+
+  /* Intro */
+  .intro { text-align: center; padding: 10px; }
+  .intro-title { font-family: 'Cinzel', serif; font-size: 22px; font-weight: 600; color: #f0e6ff; margin-bottom: 8px; }
+  .intro-sub { font-size: 14px; color: #c4a8ff; line-height: 1.7; margin-bottom: 20px; }
+  .intro-icon { font-size: 64px; display: block; margin-bottom: 12px; animation: float 2.5s ease-in-out infinite; }
+  .start-btn {
+    padding: 13px 32px;
+    background: linear-gradient(135deg, #7c3aed, #9d4edd);
+    border: none; border-radius: 10px;
+    color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s ease; animation: pulse 2s infinite;
+  }
+  .start-btn:hover { opacity: 0.9; transform: scale(1.02); }
+</style>
+
+<div id="game-root">
+  <div class="stars" id="stars-bg"></div>
+  <div class="content-wrap" id="main-content"></div>
+</div>
+
+<script>
+const FLOORS = [
+  {
+    id: 1, icon: "🪞", name: "Phòng Gương",
+    question: "Ta không có hình dạng nhưng uốn cong ánh sáng. Ta không có giọng nói nhưng tiết lộ sự thật. Ta bị phá vỡ bởi sự dối trá. Ta là gì?",
+    choices: ["Bóng tối", "Ảo ảnh", "Gương thật", "Lương tâm"],
+    correct: 3,
+    letter: "L",
+    explain: "Lương tâm không có hình dạng, phản chiếu sự thật bên trong, và bị phá vỡ khi ta dối trá. Gương thật chỉ phản chiếu bề ngoài — nhưng câu đố hỏi về điều ta muốn giấu nhất."
+  },
+  {
+    id: 2, icon: "🕯️", name: "Phòng Nến Vĩnh Cửu",
+    question: "Một trăm ngọn nến cháy trong phòng kín hoàn toàn, không có gió, không có oxy từ bên ngoài. Ngọn nến nào sẽ tắt cuối cùng?",
+    choices: ["Ngọn nến to nhất", "Ngọn nến ở giữa phòng", "Ngọn nến được thắp sau cùng", "Tất cả tắt cùng lúc khi hết oxy"],
+    correct: 3,
+    letter: "Ư",
+    explain: "Phòng kín hoàn toàn — oxy cạn kiệt đồng đều cho toàn bộ không gian. Không ngọn nào được ưu tiên, chúng tắt gần như đồng thời."
+  },
+  {
+    id: 3, icon: "⚗️", name: "Phòng Luyện Kim",
+    question: "Bình Đỏ: nhân đôi sức mạnh 1 giờ rồi giảm còn ½. Bình Xanh: gấp ba trong 30 phút rồi về 0. Bình Vàng: tăng 50% vĩnh viễn. Kẻ thù tấn công sau 2 giờ — chọn bình nào?",
+    choices: ["Đỏ — nhân đôi mạnh hơn 50%", "Xanh — gấp ba là cao nhất", "Vàng — hiệu quả vĩnh viễn", "Uống Đỏ trước, sau 90 phút uống Vàng"],
+    correct: 2,
+    letter: "Ợ",
+    explain: "Bình Đỏ và Xanh đều hết tác dụng trước giờ chiến đấu. Chỉ Bình Vàng còn hiệu lực sau 2 giờ — 50% vĩnh viễn tốt hơn 300% trong 30 phút rồi mất sạch."
+  },
+  {
+    id: 4, icon: "🌙", name: "Phòng Thiên Văn",
+    question: "Một hành tinh quay quanh ngôi sao mỗi 12 năm. Ngôi sao nổ tung sau 100 năm kể từ đầu. Hành tinh đã hoàn thành 7 vòng quay. Còn bao nhiêu năm cho đến khi ngôi sao nổ?",
+    choices: ["16 năm", "4 năm", "28 năm", "88 năm"],
+    correct: 0,
+    letter: "N",
+    explain: "7 vòng × 12 năm = 84 năm đã trôi qua. 100 − 84 = 16 năm còn lại."
+  },
+  {
+    id: 5, icon: "🐉", name: "Phòng Ký Ức Rồng",
+    question: "Cha rồng sống 400 năm. Con rồng già đã sống bằng nửa tuổi cha khi cha mất. Em rồng trẻ hơn anh 50 năm. Khi anh rồng chết ở tuổi 400, em rồng bao nhiêu tuổi?",
+    choices: ["350 tuổi", "200 tuổi", "150 tuổi", "250 tuổi"],
+    correct: 0,
+    letter: "G",
+    explain: "Anh rồng hiện tại 200 tuổi (½×400). Khi anh chết ở 400, thêm 200 năm nữa trôi qua. Em lúc đó (đang 150 tuổi) sẽ thêm 200 năm → 350 tuổi."
+  },
+  {
+    id: 6, icon: "🗝️", name: "Phòng Ba Cánh Cửa",
+    question: "Cửa A: phòng đầy vàng, không có lối ra. Cửa B: mê cung chỉ kẻ dũng cảm qua được. Cửa C: bóng tối hoàn toàn nhưng có lối thoát thẳng. Alderon thì thầm: 'Người khôn không chọn bằng mắt.'",
+    choices: ["Cửa A — vàng là sức mạnh", "Cửa B — dũng cảm vượt mê cung", "Cửa C — bóng tối không có nghĩa là nguy hiểm", "Đập vỡ cả ba cửa"],
+    correct: 2,
+    letter: "U",
+    explain: "A là bẫy (không lối ra). B là thử thách không cần thiết. C đơn giản và hiệu quả nhất — lời thầy nhắc: đừng để mắt đánh lừa."
+  },
+  {
+    id: 7, icon: "🧊", name: "Phòng Băng Vĩnh Cửu",
+    question: "Khối băng hình lập phương cạnh 3m đang tan với tốc độ 1m³/giờ. Sau bao nhiêu giờ, khối băng mất đi một nửa thể tích ban đầu?",
+    choices: ["Sau khoảng 13–14 giờ", "Sau 27 giờ", "Sau 9 giờ", "Sau 18 giờ"],
+    correct: 0,
+    letter: "Y",
+    explain: "Thể tích ban đầu: 3³ = 27m³. Một nửa = 13,5m³. Ở tốc độ 1m³/giờ → cần 13,5 giờ ≈ 13–14 giờ."
+  },
+  {
+    id: 8, icon: "🌊", name: "Phòng Nước Sống",
+    question: "Dòng A đổ đầy hồ sau 4h. Dòng B sau 6h. Dòng C sau 12h. Dòng D hút cạn hồ sau 3h. Mở cả bốn cùng lúc, bao giờ hồ đầy?",
+    choices: ["Sau khoảng 6 giờ", "Không bao giờ đầy", "Sau khoảng 4 giờ", "Sau đúng 3 giờ"],
+    correct: 0,
+    letter: "Ê",
+    explain: "Tốc độ: A=¼, B=⅙, C=1/12, D=−⅓ hồ/giờ. Tổng = 3/12+2/12+1/12−4/12 = 2/12 = 1/6 hồ/giờ → đầy sau 6 giờ."
+  },
+  {
+    id: 9, icon: "🔥", name: "Phòng Lửa Bất Diệt",
+    question: "Ta sinh ra trong bóng tối, nhưng bóng tối sợ ta. Ta tiêu thụ mọi thứ nhưng không no. Ta sưởi ấm kẻ yêu ta, thiêu rụi kẻ tham. Kẻ dập tắt ta cũng là thứ ta cần để sống. Ta là gì?",
+    choices: ["Lửa", "Tham vọng", "Tình yêu", "Phép thuật"],
+    correct: 0,
+    letter: "N",
+    explain: "Lửa: sinh ra khi đánh lửa trong bóng tối, bóng tối biến mất vì lửa, tiêu thụ nhiên liệu không ngừng, cần oxy (trong nước H₂O) — mà nước lại dập tắt lửa."
+  },
+  {
+    id: 10, icon: "🌟", name: "Tầng Nguồn Gốc",
+    question: "Alderon hiện ra: 'Điều gì mạnh hơn phép thuật, cũ hơn thời gian, không thể học trong sách — nhưng con đã dùng nó suốt hành trình này để giải mọi câu đố?'",
+    choices: ["Trí tuệ", "Ý chí", "Tư duy logic", "Lòng tin vào thầy"],
+    correct: 2,
+    letter: "H",
+    explain: "Phép thuật có thể học. Ý chí không giải được toán. Lòng tin không mở cửa. Chỉ tư duy logic là công cụ Kael thực sự dùng qua 10 tầng."
+  }
+];
+
+const MAGIC_WORD = "LƯỢNGUYNÊNH";
+const MAGIC_DISPLAY = "LƯỢNG NGUYÊN H";
+
+let state = {
+  screen: 'intro',
+  floor: 0,
+  answered: false,
+  chosen: -1,
+  score: 0,
+  hearts: 3,
+  revealedLetters: []
+};
+
+function makeStars() {
+  const c = document.getElementById('stars-bg');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;opacity:${Math.random()*0.6+0.1};animation-delay:${Math.random()*4}s;animation-duration:${2+Math.random()*4}s`;
+    c.appendChild(s);
+  }
+}
+
+function render() {
+  const el = document.getElementById('main-content');
+  if (state.screen === 'intro') el.innerHTML = renderIntro();
+  else if (state.screen === 'game') el.innerHTML = renderGame();
+  else el.innerHTML = renderEnding();
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'fadeIn 0.4s ease';
+}
+
+function renderIntro() {
+  return `<div class="intro">
+    <span class="intro-icon">🔮</span>
+    <div class="intro-title">Di Chúc Của Pháp Sư Cuối Cùng</div>
+    <div class="intro-sub">Pháp sư Alderon đã qua đời, để lại tòa tháp bí ẩn với 10 tầng câu đố. Giải mọi câu đố, thu thập mật ngữ và mở Quyển Sách Nguồn Gốc.<br><br>Bạn có <b>3 lần</b> được phép sai. Hãy suy nghĩ thật kỹ! 🧙</div>
+    <div class="cipher-row">${MAGIC_WORD.split('').map(()=>`<div class="cipher-cell">?</div>`).join('')}</div>
+    <button class="start-btn" onclick="startGame()">✨ Bắt đầu hành trình</button>
+  </div>`;
+}
+
+function renderGame() {
+  const f = FLOORS[state.floor];
+  const pct = Math.round((state.floor / FLOORS.length) * 100);
+  const letters = MAGIC_WORD.split('');
+
+  return `
+    <div class="game-header">
+      <span class="game-title">🔮 Tháp Alderon</span>
+      <span class="floor-badge">Tầng ${f.id} / ${FLOORS.length}</span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-label"><span>${pct}% hoàn thành</span><span>${state.floor}/${FLOORS.length} tầng</span></div>
+    </div>
+    <div class="score-line">
+      <span class="score-chip hearts">${'❤️'.repeat(state.hearts)}${'🖤'.repeat(3-state.hearts)}</span>
+      <span class="score-chip points">⭐ ${state.score} điểm</span>
+    </div>
+    <div class="cipher-row">
+      ${letters.map((l,i) => {
+        const rev = state.revealedLetters[i];
+        return `<div class="cipher-cell ${rev?'revealed':''}" id="cell-${i}">${rev?l:'?'}</div>`;
+      }).join('')}
+    </div>
+    <span class="floor-icon">${f.icon}</span>
+    <div class="floor-title">${f.name}</div>
+    <div class="scroll-card">${f.question}</div>
+    <div class="choices">
+      ${f.choices.map((c,i) => {
+        let cls = '';
+        if (state.answered) {
+          if (i === f.correct) cls = 'correct';
+          else if (i === state.chosen && i !== f.correct) cls = 'wrong';
+        }
+        return `<button class="choice-btn ${cls}" onclick="choose(${i})" ${state.answered?'disabled':''}><span class="choice-letter">${['A','B','C','D'][i]}</span>${c}</button>`;
+      }).join('')}
+    </div>
+    <div class="feedback-box ${state.answered?(state.chosen===f.correct?'correct-fb':'wrong-fb'):''}" id="fb" style="display:${state.answered?'block':'none'}">
+      ${state.answered ? (state.chosen===f.correct ? `✨ <b>Chính xác!</b> Chữ "<b>${f.letter}</b>" được khắc vào mật ngữ. <br><i>${f.explain}</i>` : `💫 <b>Chưa đúng rồi!</b> Đáp án là <b>${['A','B','C','D'][f.correct]}</b>. <br><i>${f.explain}</i>`) : ''}
+    </div>
+    <button class="next-btn" id="next-btn" onclick="nextFloor()" style="display:${state.answered?'block':'none'}">
+      ${state.floor < FLOORS.length - 1 ? '⬆️ Lên tầng tiếp theo' : '📖 Mở Quyển Sách!'}
+    </button>
+  `;
+}
+
+function renderEnding() {
+  const won = state.hearts > 0;
+  return `<div class="ending">
+    <span class="ending-icon">${won?'📖':'💀'}</span>
+    <div class="ending-title">${won?'Quyển Sách Đã Mở!':'Hành Trình Kết Thúc'}</div>
+    <div class="ending-sub">${won
+      ? `Con đã chứng tỏ trí tuệ xứng đáng kế thừa di sản của Alderon.<br>Mật ngữ đã được giải mã:`
+      : `Alderon thì thầm: "Hãy quay lại và thử lần nữa, học trò."<br>Kael bước ra khỏi tháp, quyết tâm trở lại.`
+    }</div>
+    ${won ? `<div class="magic-word">${MAGIC_DISPLAY}</div>
+    <div style="font-size:13px;color:#c4a8ff;line-height:1.7;margin-top:12px;padding:0 10px">
+      "Phép thuật không đến từ máu hay đũa phép.<br>Nó đến từ việc hiểu thế giới vận hành theo quy luật —<br>và <b style='color:#f0c4ff'>tư duy logic</b> là chìa khóa duy nhất."<br><span style='color:rgba(196,168,255,0.6);font-size:12px'>— Alderon</span>
+    </div>` : ''}
+    <div style="margin-top:10px;font-size:14px;color:#c4a8ff">⭐ Điểm của bạn: <b style='color:#fcd34d'>${state.score}</b> / ${FLOORS.length * 10}</div>
+    <button class="restart-btn" onclick="restartGame()">🔄 Chơi lại</button>
+  </div>`;
+}
+
+function startGame() {
+  state = { screen:'game', floor:0, answered:false, chosen:-1, score:0, hearts:3, revealedLetters: Array(MAGIC_WORD.length).fill(false) };
+  render();
+}
+
+function restartGame() { startGame(); }
+
+function choose(i) {
+  if (state.answered) return;
+  const f = FLOORS[state.floor];
+  state.answered = true;
+  state.chosen = i;
+  if (i === f.correct) {
+    state.score += 10;
+    state.revealedLetters[state.floor] = true;
+  } else {
+    state.hearts--;
+    if (state.hearts <= 0) {
+      setTimeout(()=>{ state.screen='ending'; render(); }, 1500);
+    }
+  }
+  render();
+}
+
+function nextFloor() {
+  state.floor++;
+  state.answered = false;
+  state.chosen = -1;
+  if (state.floor >= FLOORS.length) {
+    state.screen = 'ending';
+  }
+  render();
+}
+
+makeStars();
+render();
+</script>
